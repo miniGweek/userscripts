@@ -14,7 +14,9 @@
         script.setAttribute("src", "https://code.jquery.com/jquery-3.5.1.min.js");
         script.addEventListener('load', function () {
             var script = document.createElement("script");
-            script.textContent = "(" + callback.toString() + ")();";
+            if(callback != undefined && callback != null){
+                script.textContent = "(" + callback.toString() + ")();";
+            }
             document.body.appendChild(script);
         }, false);
         document.body.appendChild(script);
