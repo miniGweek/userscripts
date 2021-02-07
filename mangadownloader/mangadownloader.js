@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         mangadownloader
-// @namespace    https://github.com/ecchiluver/mangadownloader
-// @version      0.1
+// @namespace    https://github.com/minigweek/userscripts/mangadownloader
+// @version      1
 // @description  download manga from sites like webtoon.xyz
-// @author       EcchiLuver
+// @author       miniGweek
 // @match        https://www.webtoon.xyz/read/*
-// @require     file://C:\Code\mangadownloader\mangadownloader.js
+// @require     file://C:\Code\userscripts\userscripts\mangadownloader\mangadownloader.js
 // @grant        none
 // ==/UserScript==
 (function () {
