@@ -196,7 +196,7 @@
                 ) {
                   window.tamperMonkey_downloadStatus[rowIndex - 1] =
                     "Completed";
-                  console.log(`${rowIndex} marked as Completed`);
+                  console.log(`Batch ${rowIndex} marked as Completed`);
                 }
               }
             }
