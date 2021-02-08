@@ -52,78 +52,80 @@
               .trim()
               .split("\n");
 
-            var mangaTitle = mangaTitleWithTag[mangaTitleWithTag.length - 1];
-
-            var zip = new JSZip();
-            var chapterCount = jQuery("li.wp-manga-chapter>a").length;
-            var chapterCountProgress = 0;
+            window.tamperMonkey_zip = new JSZip();
+            window.tamperMonkey_mangaTitle =
+              mangaTitleWithTag[mangaTitleWithTag.length - 1];
+            // var chapterCount = jQuery("li.wp-manga-chapter>a").length;
+            window.tamperMonkey_chapterCountProgress = 0;
+            window.tamperMonkey_chapterRows = jQuery("li.wp-manga-chapter>a"); //.slice(0, 5);
+            window.tamperMonkey_chapterCount =
+              window.tamperMonkey_chapterRows.length;
+            window.tamperMonkey_batchDownloadCounter = 3;
+            var batches = [];
+            window.tamperMonkey_downloadStatus = [];
+            var zipFilename;
 
             jQuery("button#tampermonkeyscript_downloadall").click(function () {
-              jQuery("li.wp-manga-chapter>a").each(function (i, e) {
-                var chapterLink = jQuery(e).attr("href").trim();
-                //                console.log(chapterLink);
-                jQuery.get(chapterLink, function (data) {
-                  var pageInAChapterCount = 0;
-                  var html = jQuery.parseHTML(data);
+              window.tamperMonkey_chapterRows.each(function (index, element) {
+                // var rowIndex = parseInt(index / batchDownloadCounter);
+                var columnIndex =
+                  index % window.tamperMonkey_batchDownloadCounter;
 
-                  var images = jQuery(html).find("div.page-break.no-gaps>img");
-
-                  var chapterNumber = null;
-                  var zipFilename;
-                  var urls = [];
-                  var numberOfUrls = 0;
-
-                  images.each(function (i, e) {
-                    var img = jQuery(e);
-                    url = img.attr("data-src").trim();
-
-                    var imgLinkSplitParts = url.split("/");
-                    var imgLinkLength = imgLinkSplitParts.length;
-
-                    if (chapterNumber == null) {
-                      chapterNumber = imgLinkSplitParts[imgLinkLength - 2];
-                      zipFilename = `${mangaTitle}.zip`;
-                    }
-                    if (url.indexOf(chapterNumber) > 0) {
-                      urls.push(url);
-                    }
-                  });
-                  numberOfUrls = urls.length;
-
-                  urls.forEach(function (url) {
-                    var imgLinkSplitParts = url.split("/");
-                    var imgLinkLength = imgLinkSplitParts.length;
-                    var imageName = imgLinkSplitParts[imgLinkLength - 1];
-                    var imageNameWithChapter = chapterNumber + "_" + imageName;
-                    var filename = imageNameWithChapter;
-
-                    // loading a file and add it in a zip file
-
-                    JSZipUtils.getBinaryContent(url, function (err, data) {
-                      if (err) {
-                        throw err; // or handle the error
-                      }
-                      console.log(`${filename} done`);
-                      zip.file(filename, data, { binary: true });
-                      pageInAChapterCount++;
-                      if (pageInAChapterCount == numberOfUrls) {
-                        chapterCountProgress++;
-                        console.log(
-                          `page ${pageInAChapterCount} done of chapter ${chapterCountProgress}`
-                        );
-                        if (chapterCount == chapterCountProgress) {
-                          console.log("Ready to zip!" + zipFilename);
-                          zip
-                            .generateAsync({ type: "blob" })
-                            .then(function (content) {
-                              saveAs(content, zipFilename);
-                            });
-                        }
-                      }
-                    });
-                  });
-                });
+                if (columnIndex == 0) {
+                  batches.push(
+                    window.tamperMonkey_chapterRows.slice(
+                      index,
+                      index + window.tamperMonkey_batchDownloadCounter
+                    )
+                  );
+                  window.tamperMonkey_downloadStatus.push("NotStarted");
+                }
               });
+
+              var zipDownloadCheckerInterval = setInterval(function () {
+                // console.log(
+                //   "Chapter progress =" +
+                //     window.tamperMonkey_chapterCountProgress
+                // );
+
+                var rowIndex = parseInt(
+                  window.tamperMonkey_chapterCountProgress /
+                    window.tamperMonkey_batchDownloadCounter
+                );
+                // console.log("Row = " + rowIndex);
+                if (
+                  window.tamperMonkey_downloadStatus[rowIndex] == "NotStarted"
+                ) {
+                  window.tamperMonkey_downloadStatus[rowIndex] = "Queued";
+                  batches[rowIndex].each(function (i, e) {
+                    var chapterLink = jQuery(e).attr("href").trim();
+                    var inputObject = {
+                      chapterLink: chapterLink,
+                      zipFilename: zipFilename,
+                    };
+
+                    ({
+                      chapterLink,
+                      zipFilename,
+                    } = tamperMonkey_chapterDownloader(inputObject));
+                  });
+                }
+
+                if (
+                  window.tamperMonkey_chapterCount ==
+                  window.tamperMonkey_chapterCountProgress
+                ) {
+                  console.log(
+                    "Ready to zip!" + `${window.tamperMonkey_mangaTitle}.zip`
+                  );
+                  window.tamperMonkey_zip
+                    .generateAsync({ type: "blob" })
+                    .then(function (content) {
+                      saveAs(content, `${window.tamperMonkey_mangaTitle}.zip`);
+                    });
+                  clearInterval(zipDownloadCheckerInterval);
+                }
+              }, 1000);
             });
           }
         }, 500);
@@ -131,6 +133,93 @@
     }, 500);
   }
 })();
+
+(function () {
+  if (window.tamperMonkey_chapterDownloader == undefined) {
+    window.tamperMonkey_chapterDownloader = function (inputObject) {
+      ({ chapterLink, zipFilename } = inputObject);
+
+      jQuery.get(chapterLink, function (data) {
+        var pageInAChapterCount = 0;
+        var html = jQuery.parseHTML(data);
+
+        var images = jQuery(html).find("div.page-break.no-gaps>img");
+
+        var chapterNumber = null;
+
+        var urls = [];
+        var numberOfUrls = 0;
+
+        images.each(function (i, e) {
+          var img = jQuery(e);
+          url = img.attr("data-src").trim();
+
+          var imgLinkSplitParts = url.split("/");
+          var imgLinkLength = imgLinkSplitParts.length;
+
+          if (chapterNumber == null) {
+            chapterNumber = imgLinkSplitParts[imgLinkLength - 2];
+            zipFilename = `${window.tamperMonkey_mangaTitle}.zip`;
+          }
+          if (url.indexOf(chapterNumber) > 0) {
+            urls.push(url);
+          }
+        });
+        numberOfUrls = urls.length;
+
+        urls.forEach(function (url) {
+          var imgLinkSplitParts = url.split("/");
+          var imgLinkLength = imgLinkSplitParts.length;
+          var imageName = imgLinkSplitParts[imgLinkLength - 1];
+          var imageNameWithChapter = chapterNumber + "_" + imageName;
+          var filename = imageNameWithChapter;
+
+          // loading a file and add it in a zip file
+
+          JSZipUtils.getBinaryContent(url, function (err, data) {
+            if (err) {
+              throw err; // or handle the error
+            }
+            // console.log(`${filename} done`);
+            window.tamperMonkey_zip.file(filename, data, { binary: true });
+            pageInAChapterCount++;
+            if (pageInAChapterCount == numberOfUrls) {
+              window.tamperMonkey_chapterCountProgress++;
+              // console.log(
+              //   `page ${pageInAChapterCount} done of chapter ${window.tamperMonkey_chapterCountProgress}`
+              // );
+              if (
+                window.tamperMonkey_chapterCount ==
+                  window.tamperMonkey_chapterCountProgress ||
+                window.tamperMonkey_chapterCountProgress %
+                  window.tamperMonkey_batchDownloadCounter ==
+                  0
+              ) {
+                var rowIndex = parseInt(
+                  window.tamperMonkey_chapterCountProgress /
+                    window.tamperMonkey_batchDownloadCounter
+                );
+                if (
+                  window.tamperMonkey_downloadStatus[rowIndex - 1] == "Queued"
+                ) {
+                  window.tamperMonkey_downloadStatus[rowIndex - 1] =
+                    "Completed";
+                  console.log(`${rowIndex} marked as Completed`);
+                }
+              }
+            }
+          });
+        });
+      });
+
+      return {
+        chapterLink: chapterLink,
+        zipFilename: zipFilename,
+      };
+    };
+  }
+})();
+
 /*!
 
 JSZip v3.5.0 - A JavaScript class for generating and reading zip files
