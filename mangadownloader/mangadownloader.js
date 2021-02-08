@@ -2,10 +2,10 @@
 // @name         mangadownloader
 // @namespace    https://github.com/minigweek/userscripts/mangadownloader
 // @version      1
-// @description  download manga from sites like webtoon.xyz
+// @description  download manga from sites like webtoon.xyz,toonily.net
 // @author       miniGweek
-// @match        https://www.webtoon.xyz/read/*
-// @require     file://C:\Code\userscripts\userscripts\mangadownloader\mangadownloader.js
+// @include      https://www.webtoon.xyz/read/*
+// @include      https://toonily.net/manga/*
 // @grant        none
 // ==/UserScript==
 (function () {
@@ -43,89 +43,97 @@
             clearInterval(chapter1foundTimer);
 
             //Start populating download link
-            jQuery("div#init-links").append(
-              "<button id='tampermonkeyscript_downloadall'>Download all</button>"
-            );
-
-            var mangaTitleWithTag = jQuery("div.post-title>h1")
-              .text()
-              .trim()
-              .split("\n");
-
-            window.tamperMonkey_zip = new JSZip();
-            window.tamperMonkey_mangaTitle =
-              mangaTitleWithTag[mangaTitleWithTag.length - 1];
-            // var chapterCount = jQuery("li.wp-manga-chapter>a").length;
-            window.tamperMonkey_chapterCountProgress = 0;
-            window.tamperMonkey_chapterRows = jQuery("li.wp-manga-chapter>a"); //.slice(0, 5);
-            window.tamperMonkey_chapterCount =
-              window.tamperMonkey_chapterRows.length;
-            window.tamperMonkey_batchDownloadCounter = 3;
-            var batches = [];
-            window.tamperMonkey_downloadStatus = [];
-            var zipFilename;
-
-            jQuery("button#tampermonkeyscript_downloadall").click(function () {
-              window.tamperMonkey_chapterRows.each(function (index, element) {
-                var columnIndex =
-                  index % window.tamperMonkey_batchDownloadCounter;
-
-                if (columnIndex == 0) {
-                  batches.push(
-                    window.tamperMonkey_chapterRows.slice(
-                      index,
-                      index + window.tamperMonkey_batchDownloadCounter
-                    )
-                  );
-                  window.tamperMonkey_downloadStatus.push("NotStarted");
-                }
-              });
-
-              var zipDownloadCheckerInterval = setInterval(function () {
-                var rowIndex = parseInt(
-                  window.tamperMonkey_chapterCountProgress /
-                    window.tamperMonkey_batchDownloadCounter
-                );
-
-                if (
-                  window.tamperMonkey_downloadStatus[rowIndex] == "NotStarted"
-                ) {
-                  window.tamperMonkey_downloadStatus[rowIndex] = "Queued";
-                  batches[rowIndex].each(function (i, e) {
-                    var chapterLink = jQuery(e).attr("href").trim();
-                    var inputObject = {
-                      chapterLink: chapterLink,
-                      zipFilename: zipFilename,
-                    };
-
-                    ({
-                      chapterLink,
-                      zipFilename,
-                    } = tamperMonkey_chapterDownloader(inputObject));
-                  });
-                }
-
-                if (
-                  window.tamperMonkey_chapterCount ==
-                  window.tamperMonkey_chapterCountProgress
-                ) {
-                  console.log(
-                    "Ready to zip!" + `${window.tamperMonkey_mangaTitle}.zip`
-                  );
-                  window.tamperMonkey_zip
-                    .generateAsync({ type: "blob" })
-                    .then(function (content) {
-                      saveAs(content, `${window.tamperMonkey_mangaTitle}.zip`);
-                    });
-                  clearInterval(zipDownloadCheckerInterval);
-                }
-              }, 1000);
-            });
+            window.tamperMonkey_downloadLinker();
           }
         }, 500);
+      } else {
+        //Start populating download link
+        window.tamperMonkey_downloadLinker();
       }
     }, 500);
   }
+})();
+
+(function () {
+  window.tamperMonkey_downloadLinker = function () {
+    if (
+      jQuery("div#init-links>button#tampermonkeyscript_downloadall").length == 0
+    ) {
+      jQuery("div#init-links").append(
+        "<button id='tampermonkeyscript_downloadall'>Download all</button>"
+      );
+
+      var mangaTitleWithTag = jQuery("div.post-title>h1")
+        .text()
+        .trim()
+        .split("\n");
+
+      window.tamperMonkey_zip = new JSZip();
+      window.tamperMonkey_mangaTitle =
+        mangaTitleWithTag[mangaTitleWithTag.length - 1];
+      window.tamperMonkey_chapterCountProgress = 0;
+      window.tamperMonkey_chapterRows = jQuery("li.wp-manga-chapter>a"); //.slice(0, 5);
+      window.tamperMonkey_chapterCount = window.tamperMonkey_chapterRows.length;
+      window.tamperMonkey_batchDownloadCounter = 5;
+      var batches = [];
+      window.tamperMonkey_downloadStatus = [];
+      var zipFilename;
+
+      jQuery("button#tampermonkeyscript_downloadall").click(function () {
+        window.tamperMonkey_chapterRows.each(function (index, element) {
+          var columnIndex = index % window.tamperMonkey_batchDownloadCounter;
+
+          if (columnIndex == 0) {
+            batches.push(
+              window.tamperMonkey_chapterRows.slice(
+                index,
+                index + window.tamperMonkey_batchDownloadCounter
+              )
+            );
+            window.tamperMonkey_downloadStatus.push("NotStarted");
+          }
+        });
+
+        var zipDownloadCheckerInterval = setInterval(function () {
+          var rowIndex = parseInt(
+            window.tamperMonkey_chapterCountProgress /
+              window.tamperMonkey_batchDownloadCounter
+          );
+
+          if (window.tamperMonkey_downloadStatus[rowIndex] == "NotStarted") {
+            window.tamperMonkey_downloadStatus[rowIndex] = "Queued";
+            batches[rowIndex].each(function (i, e) {
+              var chapterLink = jQuery(e).attr("href").trim();
+              console.log(chapterLink);
+              var inputObject = {
+                chapterLink: chapterLink,
+                zipFilename: zipFilename,
+              };
+
+              ({ chapterLink, zipFilename } = tamperMonkey_chapterDownloader(
+                inputObject
+              ));
+            });
+          }
+
+          if (
+            window.tamperMonkey_chapterCount ==
+            window.tamperMonkey_chapterCountProgress
+          ) {
+            console.log(
+              "Ready to zip!" + `${window.tamperMonkey_mangaTitle}.zip`
+            );
+            window.tamperMonkey_zip
+              .generateAsync({ type: "blob" })
+              .then(function (content) {
+                saveAs(content, `${window.tamperMonkey_mangaTitle}.zip`);
+              });
+            clearInterval(zipDownloadCheckerInterval);
+          }
+        }, 1000);
+      });
+    }
+  };
 })();
 
 (function () {
@@ -146,7 +154,11 @@
 
         images.each(function (i, e) {
           var img = jQuery(e);
-          url = img.attr("data-src").trim();
+          url = img.attr("data-src");
+          if (urls == null || url == undefined) {
+            url = img.attr("src");
+          }
+          url = url.trim();
 
           var imgLinkSplitParts = url.split("/");
           var imgLinkLength = imgLinkSplitParts.length;
@@ -6851,5 +6863,4 @@ https://github.com/nodeca/pako/blob/master/LICENSE
   (f.saveAs = g.saveAs = g),
     "undefined" != typeof module && (module.exports = g);
 });
-
 //# sourceMappingURL=FileSaver.min.js.map
