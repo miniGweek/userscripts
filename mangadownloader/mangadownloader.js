@@ -67,7 +67,6 @@
 
             jQuery("button#tampermonkeyscript_downloadall").click(function () {
               window.tamperMonkey_chapterRows.each(function (index, element) {
-                // var rowIndex = parseInt(index / batchDownloadCounter);
                 var columnIndex =
                   index % window.tamperMonkey_batchDownloadCounter;
 
@@ -83,16 +82,11 @@
               });
 
               var zipDownloadCheckerInterval = setInterval(function () {
-                // console.log(
-                //   "Chapter progress =" +
-                //     window.tamperMonkey_chapterCountProgress
-                // );
-
                 var rowIndex = parseInt(
                   window.tamperMonkey_chapterCountProgress /
                     window.tamperMonkey_batchDownloadCounter
                 );
-                // console.log("Row = " + rowIndex);
+
                 if (
                   window.tamperMonkey_downloadStatus[rowIndex] == "NotStarted"
                 ) {
@@ -180,14 +174,12 @@
             if (err) {
               throw err; // or handle the error
             }
-            // console.log(`${filename} done`);
+
             window.tamperMonkey_zip.file(filename, data, { binary: true });
             pageInAChapterCount++;
             if (pageInAChapterCount == numberOfUrls) {
               window.tamperMonkey_chapterCountProgress++;
-              // console.log(
-              //   `page ${pageInAChapterCount} done of chapter ${window.tamperMonkey_chapterCountProgress}`
-              // );
+
               if (
                 window.tamperMonkey_chapterCount ==
                   window.tamperMonkey_chapterCountProgress ||
