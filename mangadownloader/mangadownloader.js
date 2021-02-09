@@ -55,6 +55,62 @@
 })();
 
 (function () {
+  window.tamperMonkey_mdl_DownloadAllOnClick = function (batches, zipFilename) {
+    window.tamperMonkey_mdl_chapterRows.each(function (index, element) {
+      var columnIndex = index % window.tamperMonkey_mdl_batchDownloadCounter;
+
+      if (columnIndex == 0) {
+        batches.push(
+          window.tamperMonkey_mdl_chapterRows.slice(
+            index,
+            index + window.tamperMonkey_mdl_batchDownloadCounter
+          )
+        );
+        window.tamperMonkey_mdl_downloadStatus.push("NotStarted");
+      }
+    });
+
+    var zipDownloadCheckerInterval = setInterval(function () {
+      var rowIndex = parseInt(
+        window.tamperMonkey_mdl_chapterCountProgress /
+          window.tamperMonkey_mdl_batchDownloadCounter
+      );
+
+      if (window.tamperMonkey_mdl_downloadStatus[rowIndex] == "NotStarted") {
+        window.tamperMonkey_mdl_downloadStatus[rowIndex] = "Queued";
+        batches[rowIndex].each(function (i, e) {
+          var chapterLink = jQuery(e).attr("href").trim();
+          console.log(chapterLink);
+          var inputObject = {
+            chapterLink: chapterLink,
+            zipFilename: zipFilename,
+          };
+
+          ({ chapterLink, zipFilename } = tamperMonkey_mdl_chapterDownloader(
+            inputObject
+          ));
+        });
+      }
+
+      if (
+        window.tamperMonkey_mdl_chapterCount ==
+        window.tamperMonkey_mdl_chapterCountProgress
+      ) {
+        console.log(
+          "Ready to zip!" + `${window.tamperMonkey_mdl_mangaTitle}.zip`
+        );
+        window.tamperMonkey_mdl_zip
+          .generateAsync({ type: "blob" })
+          .then(function (content) {
+            saveAs(content, `${window.tamperMonkey_mdl_mangaTitle}.zip`);
+          });
+        clearInterval(zipDownloadCheckerInterval);
+      }
+    }, 1000);
+  };
+})();
+
+(function () {
   window.tamperMonkey_mdl_downloadLinker = function () {
     if (
       jQuery("div#init-links>button#tampermonkeyscript_downloadall").length == 0
@@ -81,61 +137,7 @@
       var zipFilename;
 
       jQuery("button#tampermonkeyscript_downloadall").click(function () {
-        window.tamperMonkey_mdl_chapterRows.each(function (index, element) {
-          var columnIndex =
-            index % window.tamperMonkey_mdl_batchDownloadCounter;
-
-          if (columnIndex == 0) {
-            batches.push(
-              window.tamperMonkey_mdl_chapterRows.slice(
-                index,
-                index + window.tamperMonkey_mdl_batchDownloadCounter
-              )
-            );
-            window.tamperMonkey_mdl_downloadStatus.push("NotStarted");
-          }
-        });
-
-        var zipDownloadCheckerInterval = setInterval(function () {
-          var rowIndex = parseInt(
-            window.tamperMonkey_mdl_chapterCountProgress /
-              window.tamperMonkey_mdl_batchDownloadCounter
-          );
-
-          if (
-            window.tamperMonkey_mdl_downloadStatus[rowIndex] == "NotStarted"
-          ) {
-            window.tamperMonkey_mdl_downloadStatus[rowIndex] = "Queued";
-            batches[rowIndex].each(function (i, e) {
-              var chapterLink = jQuery(e).attr("href").trim();
-              console.log(chapterLink);
-              var inputObject = {
-                chapterLink: chapterLink,
-                zipFilename: zipFilename,
-              };
-
-              ({
-                chapterLink,
-                zipFilename,
-              } = tamperMonkey_mdl_chapterDownloader(inputObject));
-            });
-          }
-
-          if (
-            window.tamperMonkey_mdl_chapterCount ==
-            window.tamperMonkey_mdl_chapterCountProgress
-          ) {
-            console.log(
-              "Ready to zip!" + `${window.tamperMonkey_mdl_mangaTitle}.zip`
-            );
-            window.tamperMonkey_mdl_zip
-              .generateAsync({ type: "blob" })
-              .then(function (content) {
-                saveAs(content, `${window.tamperMonkey_mdl_mangaTitle}.zip`);
-              });
-            clearInterval(zipDownloadCheckerInterval);
-          }
-        }, 1000);
+        window.tamperMonkey_mdl_DownloadAllOnClick(batches, zipFilename);
       });
     }
   };
