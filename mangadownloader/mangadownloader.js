@@ -43,19 +43,19 @@
             clearInterval(chapter1foundTimer);
 
             //Start populating download link
-            window.tamperMonkey_downloadLinker();
+            window.tamperMonkey_mdl_downloadLinker();
           }
         }, 500);
       } else {
         //Start populating download link
-        window.tamperMonkey_downloadLinker();
+        window.tamperMonkey_mdl_downloadLinker();
       }
     }, 500);
   }
 })();
 
 (function () {
-  window.tamperMonkey_downloadLinker = function () {
+  window.tamperMonkey_mdl_downloadLinker = function () {
     if (
       jQuery("div#init-links>button#tampermonkeyscript_downloadall").length == 0
     ) {
@@ -68,40 +68,44 @@
         .trim()
         .split("\n");
 
-      window.tamperMonkey_zip = new JSZip();
-      window.tamperMonkey_mangaTitle =
+      window.tamperMonkey_mdl_zip = new JSZip();
+      window.tamperMonkey_mdl_mangaTitle =
         mangaTitleWithTag[mangaTitleWithTag.length - 1];
-      window.tamperMonkey_chapterCountProgress = 0;
-      window.tamperMonkey_chapterRows = jQuery("li.wp-manga-chapter>a"); //.slice(0, 5);
-      window.tamperMonkey_chapterCount = window.tamperMonkey_chapterRows.length;
-      window.tamperMonkey_batchDownloadCounter = 5;
+      window.tamperMonkey_mdl_chapterCountProgress = 0;
+      window.tamperMonkey_mdl_chapterRows = jQuery("li.wp-manga-chapter>a"); //.slice(0, 5);
+      window.tamperMonkey_mdl_chapterCount =
+        window.tamperMonkey_mdl_chapterRows.length;
+      window.tamperMonkey_mdl_batchDownloadCounter = 5;
       var batches = [];
-      window.tamperMonkey_downloadStatus = [];
+      window.tamperMonkey_mdl_downloadStatus = [];
       var zipFilename;
 
       jQuery("button#tampermonkeyscript_downloadall").click(function () {
-        window.tamperMonkey_chapterRows.each(function (index, element) {
-          var columnIndex = index % window.tamperMonkey_batchDownloadCounter;
+        window.tamperMonkey_mdl_chapterRows.each(function (index, element) {
+          var columnIndex =
+            index % window.tamperMonkey_mdl_batchDownloadCounter;
 
           if (columnIndex == 0) {
             batches.push(
-              window.tamperMonkey_chapterRows.slice(
+              window.tamperMonkey_mdl_chapterRows.slice(
                 index,
-                index + window.tamperMonkey_batchDownloadCounter
+                index + window.tamperMonkey_mdl_batchDownloadCounter
               )
             );
-            window.tamperMonkey_downloadStatus.push("NotStarted");
+            window.tamperMonkey_mdl_downloadStatus.push("NotStarted");
           }
         });
 
         var zipDownloadCheckerInterval = setInterval(function () {
           var rowIndex = parseInt(
-            window.tamperMonkey_chapterCountProgress /
-              window.tamperMonkey_batchDownloadCounter
+            window.tamperMonkey_mdl_chapterCountProgress /
+              window.tamperMonkey_mdl_batchDownloadCounter
           );
 
-          if (window.tamperMonkey_downloadStatus[rowIndex] == "NotStarted") {
-            window.tamperMonkey_downloadStatus[rowIndex] = "Queued";
+          if (
+            window.tamperMonkey_mdl_downloadStatus[rowIndex] == "NotStarted"
+          ) {
+            window.tamperMonkey_mdl_downloadStatus[rowIndex] = "Queued";
             batches[rowIndex].each(function (i, e) {
               var chapterLink = jQuery(e).attr("href").trim();
               console.log(chapterLink);
@@ -110,23 +114,24 @@
                 zipFilename: zipFilename,
               };
 
-              ({ chapterLink, zipFilename } = tamperMonkey_chapterDownloader(
-                inputObject
-              ));
+              ({
+                chapterLink,
+                zipFilename,
+              } = tamperMonkey_mdl_chapterDownloader(inputObject));
             });
           }
 
           if (
-            window.tamperMonkey_chapterCount ==
-            window.tamperMonkey_chapterCountProgress
+            window.tamperMonkey_mdl_chapterCount ==
+            window.tamperMonkey_mdl_chapterCountProgress
           ) {
             console.log(
-              "Ready to zip!" + `${window.tamperMonkey_mangaTitle}.zip`
+              "Ready to zip!" + `${window.tamperMonkey_mdl_mangaTitle}.zip`
             );
-            window.tamperMonkey_zip
+            window.tamperMonkey_mdl_zip
               .generateAsync({ type: "blob" })
               .then(function (content) {
-                saveAs(content, `${window.tamperMonkey_mangaTitle}.zip`);
+                saveAs(content, `${window.tamperMonkey_mdl_mangaTitle}.zip`);
               });
             clearInterval(zipDownloadCheckerInterval);
           }
@@ -137,8 +142,8 @@
 })();
 
 (function () {
-  if (window.tamperMonkey_chapterDownloader == undefined) {
-    window.tamperMonkey_chapterDownloader = function (inputObject) {
+  if (window.tamperMonkey_mdl_chapterDownloader == undefined) {
+    window.tamperMonkey_mdl_chapterDownloader = function (inputObject) {
       ({ chapterLink, zipFilename } = inputObject);
 
       jQuery.get(chapterLink, function (data) {
@@ -165,7 +170,7 @@
 
           if (chapterNumber == null) {
             chapterNumber = imgLinkSplitParts[imgLinkLength - 2];
-            zipFilename = `${window.tamperMonkey_mangaTitle}.zip`;
+            zipFilename = `${window.tamperMonkey_mdl_mangaTitle}.zip`;
           }
           if (url.indexOf(chapterNumber) > 0) {
             urls.push(url);
@@ -187,26 +192,27 @@
               throw err; // or handle the error
             }
 
-            window.tamperMonkey_zip.file(filename, data, { binary: true });
+            window.tamperMonkey_mdl_zip.file(filename, data, { binary: true });
             pageInAChapterCount++;
             if (pageInAChapterCount == numberOfUrls) {
-              window.tamperMonkey_chapterCountProgress++;
+              window.tamperMonkey_mdl_chapterCountProgress++;
 
               if (
-                window.tamperMonkey_chapterCount ==
-                  window.tamperMonkey_chapterCountProgress ||
-                window.tamperMonkey_chapterCountProgress %
-                  window.tamperMonkey_batchDownloadCounter ==
+                window.tamperMonkey_mdl_chapterCount ==
+                  window.tamperMonkey_mdl_chapterCountProgress ||
+                window.tamperMonkey_mdl_chapterCountProgress %
+                  window.tamperMonkey_mdl_batchDownloadCounter ==
                   0
               ) {
                 var rowIndex = parseInt(
-                  window.tamperMonkey_chapterCountProgress /
-                    window.tamperMonkey_batchDownloadCounter
+                  window.tamperMonkey_mdl_chapterCountProgress /
+                    window.tamperMonkey_mdl_batchDownloadCounter
                 );
                 if (
-                  window.tamperMonkey_downloadStatus[rowIndex - 1] == "Queued"
+                  window.tamperMonkey_mdl_downloadStatus[rowIndex - 1] ==
+                  "Queued"
                 ) {
-                  window.tamperMonkey_downloadStatus[rowIndex - 1] =
+                  window.tamperMonkey_mdl_downloadStatus[rowIndex - 1] =
                     "Completed";
                   console.log(`Batch ${rowIndex} marked as Completed`);
                 }
