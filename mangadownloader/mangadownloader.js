@@ -115,9 +115,13 @@
     if (
       jQuery("div#init-links>button#tampermonkeyscript_downloadall").length == 0
     ) {
-      jQuery("div#init-links").append(
-        "<button id='tampermonkeyscript_downloadall'>Download all</button>"
-      );
+      var appendHtml = `<button id='tampermonkeyscript_downloadall'>Download all</button>
+      <div class="progress">
+        <div id="tamperMonkey_mdl_progressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+        Download not started. 0% completed.
+      </div>
+    </div>`;
+      jQuery("div#init-links").append(appendHtml);
 
       var mangaTitleWithTag = jQuery("div.post-title>h1")
         .text()
@@ -199,6 +203,8 @@
             if (pageInAChapterCount == numberOfUrls) {
               window.tamperMonkey_mdl_chapterCountProgress++;
 
+              window.tamperMonkey_mdl_incrementProgressBar();
+
               if (
                 window.tamperMonkey_mdl_chapterCount ==
                   window.tamperMonkey_mdl_chapterCountProgress ||
@@ -232,6 +238,24 @@
   }
 })();
 
+(function () {
+  window.tamperMonkey_mdl_incrementProgressBar = function () {
+    var progressBarDiv = jQuery("div#tamperMonkey_mdl_progressBar");
+    var progressPercent = parseInt(
+      (window.tamperMonkey_mdl_chapterCountProgress /
+        window.tamperMonkey_mdl_chapterCount) *
+        100
+    );
+    progressBarDiv.text(`${progressPercent}% completed`);
+    progressBarDiv.attr("aria-valuenow", progressPercent);
+    progressBarDiv.width(`${progressPercent}%`);
+    if (progressPercent == 100) {
+      progressBarDiv.text(
+        `${progressPercent}% completed. Wait for zip to download.`
+      );
+    }
+  };
+})();
 /*!
 
 JSZip v3.5.0 - A JavaScript class for generating and reading zip files
