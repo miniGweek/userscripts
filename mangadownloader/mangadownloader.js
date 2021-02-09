@@ -120,7 +120,15 @@
         <div id="tamperMonkey_mdl_progressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
         Download not started. 0% completed.
       </div>
-    </div>`;
+    </div>
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+      <input type="hidden" name="business" value="95S4S5YT94E6L" />
+      <input type="hidden" name="item_name" value="Donation for my script work" />
+      <input type="hidden" name="currency_code" value="AUD" />
+      <label><span class="font-weight-bold">Donate</span> to miniGweek if you like this Download All functionality!</label>
+      <input type="image" src="https://www.paypalobjects.com/en_AU/i/btn/btn_donate_SM.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+     <img alt="" border="0" src="https://www.paypal.com/en_AU/i/scr/pixel.gif" width="1" height="1" />
+    </form>`;
       jQuery("div#init-links").append(appendHtml);
 
       var mangaTitleWithTag = jQuery("div.post-title>h1")
