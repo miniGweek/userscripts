@@ -8,7 +8,7 @@
 // @grant        none
 // ==/UserScript==
 
-window.userScript_taskPlanner = {
+window.userScript_jquery = {
   loadScript: function (url, sha, callback) {
     //Adding jquery
     var script = document.createElement("script");
@@ -43,7 +43,7 @@ https: (function () {
   "use strict";
   function addJQuery(callback) {
     //Adding jquery
-    userScript_taskPlanner.loadScript(
+    userScript_jquery.loadScript(
       "https://code.jquery.com/jquery-3.6.0.min.js",
       "sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=",
       callback
